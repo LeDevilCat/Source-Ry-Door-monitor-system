@@ -1,0 +1,142 @@
+/* =========================
+   GLOBAL FONTS & RESET
+   ========================= */
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap');
+@import url("https://use.typekit.net/vuf2liq.css");
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Inconsolata", monospace;
+    font-optical-sizing: auto;
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* =========================
+   LAYOUT & BACKGROUND
+   ========================= */
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* prevent scrolling */
+}
+
+body {
+    background-image: url(../images/brick-background.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: top center;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================
+   HEADER
+   ========================= */
+header {
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 193px; /* fixed header height */
+    flex-shrink: 0;
+    background-image: url(../images/source-header-banner.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: bottom center;
+}
+
+header h1 {
+    font-size: 5rem;
+    font-weight: 400;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+    margin: 0;
+}
+
+.Source {
+    width: auto;
+    max-height: 100%;
+}
+
+/* =========================
+   MAIN CONTENT
+   ========================= */
+main {
+    flex-grow: 1;
+    width: 100%;
+    height: calc(100vh - 193px); /* viewport height minus header */
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    color: #fff;
+    overflow: hidden;
+    padding: 20px;
+    gap: 40px;
+}
+
+/* =========================
+   SIGN CONTAINERS
+   ========================= */
+.timer-sign, .text-signs, .student-sign {
+    width: 30%;
+}
+
+.text-signs {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    max-height: 100%;
+    flex-shrink: 0;
+}
+
+.text-signs img {
+    height: 48%;
+    width: auto;
+    object-fit: contain;
+    margin: 1%;
+}
+
+.student-sign, .timer-sign {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    flex-shrink: 1;
+}
+
+.student-sign img, .timer-sign img {
+    max-height: 100%;
+    width: auto;
+    object-fit: contain;
+}
+
+/* =========================
+   FOOTER (HIDDEN)
+   ========================= */
+footer {
+    display: none;
+}
+
+/* =========================
+   TIMER STYLES
+   ========================= */
+#door-timer {
+    font-size: 2rem;
+    color: white;
+    font-family: "Inconsolata", monospace;
+    text-align: center;
+    text-shadow: 0 0 10px black;
+    padding: 20px;
+    border-radius: 15px;
+    background-color: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 20px rgb(0, 0, 0);
+    border: 2px solid rgba(255, 255, 255, 0.05);
+    max-width: 100%;
+    line-height: 1.5;
+}

@@ -1,0 +1,162 @@
+/* =========================
+   PHONES - PORTRAIT
+   (max-width: 576px) and portrait
+   ========================= */
+@media (max-width: 576px) and (orientation: portrait) {
+
+    /* --- Mobile Portrait Layout --- */
+    header {
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center center;
+        height: 100px;
+        width: auto;
+    }
+
+    main {
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 10px;
+        gap: 20px;
+        height: auto;
+        flex-grow: 1;
+    }
+
+    /* Hide student sign on mobile portrait */
+    .student-sign {
+        display: none !important;
+    }
+
+    /* Stack text signs vertically */
+    .text-signs {
+        flex-direction: column;
+        width: 100%;
+        height: auto;
+    }
+
+    .text-signs img {
+        width: 100vw;
+        height: auto;
+        margin: 0;
+    }
+
+    /* Timer sign full width */
+    .timer-sign {
+        width: 90%;
+    }
+
+    #door-timer {
+        font-size: 1.5rem;
+        padding: 10px;
+    }
+}
+
+/* =========================
+   PHONES - LANDSCAPE
+   (max-width: 576px) and landscape
+   ========================= */
+@media (max-width: 576px) and (orientation: landscape) {
+
+    /* --- Mobile Landscape Layout --- */
+    header {
+        background-size: cover;
+        background-position: center center;
+        height: 150px;
+        width: 100%;
+    }
+
+    main {
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+        gap: 10px;
+    }
+
+    /* Hide student sign on mobile landscape */
+    .student-sign {
+        display: none !important;
+    }
+
+    /* Arrange text signs and timer in a row */
+    .text-signs, .timer-sign {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        width: auto;
+        height: auto;
+        gap: 10px;
+    }
+
+    .text-signs img, .timer-sign {
+        width: 30vw;
+        height: auto;
+        margin: 0 5px;
+    }
+
+    /* Set order: Welcome, Timer, Door */
+    .text-signs img#welcome-sign { order: 1; }
+    .timer-sign { order: 2; }
+    .text-signs img#door-sign { order: 3; }
+}
+
+/* =========================
+   TABLETS - PORTRAIT
+   (min-width: 577px) and (max-width: 1024px) and portrait
+   ========================= */
+@media (min-width: 577px) and (max-width: 1024px) and (orientation: portrait) {
+
+    /* --- Tablet Portrait Layout --- */
+    .student-sign {
+        display: none !important;
+    }
+
+    main {
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 10px;
+        gap: 20px;
+        height: auto;
+    }
+
+    /* Stack text signs and timer vertically */
+    .text-signs, .timer-sign {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        height: auto;
+        gap: 0;
+    }
+
+    .text-signs img {
+        width: 100vw;
+        height: auto;
+        margin: 0;
+    }
+
+    .timer-sign {
+        width: 90%;
+        margin-top: 10px;
+    }
+}
+
+/* =========================
+   TABLETS & DESKTOPS - LANDSCAPE
+   (min-width: 769px) and landscape
+   ========================= */
+@media (min-width: 769px) and (orientation: landscape) {
+
+    /* --- Tablet/Desktop Landscape Layout --- */
+    .student-sign {
+        display: flex;
+    }
+
+    main {
+        flex-direction: row;
+        justify-content: space-evenly;
+        align-items: center;
+    }
+}

@@ -1,0 +1,42 @@
+<!-- =========================
+     MAIN DOOR STATUS PAGE
+     ========================= -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Main styles for layout and appearance -->
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Responsive overrides for different devices -->
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="icon" href="images/source-logo.png" type="image/png">
+    <title>Source Ovi</title>
+</head>
+<body>
+    <header>
+        <!-- The header contains the Source Logo on the background. Do not add anything inside. -->
+    </header>
+    <main>
+        <!-- Timer display (shows how long the door has been open/closed) -->
+        <div class="timer-sign">
+            <div id="door-timer">Loading...</div>
+        </div>
+        <!-- Text signs for welcome and door status -->
+        <div class="text-signs">
+            <img id="welcome-sign" src="" alt="Welcome to Source Clubroom">
+            <img id="door-sign" src="" alt="Door is Open/Closed">
+        </div>
+        <!-- Student sign (hidden on mobile/tablet portrait) -->
+        <div class="student-sign">
+            <img id="student-sign" src="" alt="Student neon sign">
+        </div>
+    </main>
+    <footer>
+        <!-- Footer is intentionally left empty/hidden -->
+    </footer>
+    <!-- Door status and timer scripts (update UI in real time) -->
+    <script src="js/door-status.js" defer></script>
+    <script src="js/door-timer.js" defer></script>
+</body>
+</html>

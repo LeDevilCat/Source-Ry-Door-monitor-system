@@ -1,0 +1,78 @@
+<!-- =========================
+     HISTORY CHARTS PAGE
+     ========================= -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>History Charts</title>
+    <link rel="stylesheet" href="../css/history-data.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <!-- The header contains the Source Logo on the background. Do not add anything inside. -->
+    </header>
+    <main>
+        <!-- =========================
+             SUMMARY SECTION
+             ========================= -->
+        <section id="summary">
+            <div id="today-summary">
+                <h2 id="today-date">Today’s Summary</h2>
+                <p id="today-openings">Loading...</p>
+                <p id="today-longest">Loading...</p>
+            </div>
+            <div id="alltime-summary">
+                <h2>All-Time Records</h2>
+                <p id="most-openings-day">Loading...</p>
+                <p id="longest-open-day">Loading...</p>
+            </div>
+        </section>
+
+        <!-- =========================
+             WEEKLY CHARTS (7 DAYS)
+             ========================= -->
+        <div class="chart-row">
+            <div class="chart-container">
+                <h2>Daily Openings (Last 7 Days)</h2>
+                <canvas id="dailyOpeningsChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Opening Durations (Last 7 Days)</h2>
+                <canvas id="openingDurationsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- =========================
+             MONTHLY CHARTS (30 DAYS)
+             ========================= -->
+        <div class="chart-row">
+            <div class="chart-container">
+                <h2>Daily Openings (Last 30 Days)</h2>
+                <canvas id="monthlyOpeningsChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Opening Durations (Last 30 Days)</h2>
+                <canvas id="monthlyDurationsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- =========================
+             90-DAY CHARTS
+             ========================= -->
+        <div class="chart-row">
+            <div class="chart-container">
+                <h2>Daily Openings (Last 90 Days)</h2>
+                <canvas id="ninetyDayOpeningsChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h2>Opening Durations (Last 90 Days)</h2>
+                <canvas id="ninetyDayDurationsChart"></canvas>
+            </div>
+        </div>
+    </main>
+    <script src="../js/history-charts.js" defer></script>
+</body>
+</html>
