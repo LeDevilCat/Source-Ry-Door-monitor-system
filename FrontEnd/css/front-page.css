@@ -1,0 +1,171 @@
+/* ========== LAYOUT & BACKGROUND ========== */
+/*
+   Styles for the main front page layout and background.
+   - Sets up full viewport height and disables scrolling.
+   - Background image and color are defined here.
+*/
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+body {
+    background-image: url(../images/brick-background.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: top center;
+}
+
+/* ========== HEADER ========== */
+/*
+   Header styles are now moved to global.css for consistency across pages.
+   Only page-specific header overrides should be placed here.
+*/
+
+header h1 {
+    font-size: 5rem;
+    font-weight: 400;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+    margin: 0;
+}
+
+.Source {
+    width: auto;
+    max-height: 100%;
+}
+
+/* ========== MAIN CONTENT ========== */
+main {
+    flex-grow: 1;
+    width: 100%;
+    height: calc(100vh - 193px);
+    min-height: 0; /* ✅ ADDED: Prevent flex children from causing overflow */
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    overflow: hidden;
+    padding: 20px;
+    gap: 40px;
+}
+
+/* ========== SIGN CONTAINERS ========== */
+.timer-sign, .text-signs, .student-sign {
+    width: 30%;
+}
+
+.text-signs {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    max-height: 100%;
+    flex-shrink: 0;
+}
+
+.text-signs img {
+    height: 48%;
+    width: auto;
+    object-fit: contain;
+    margin: 1%;
+}
+
+.student-sign, .timer-sign {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.student-sign img, .timer-sign img {
+    max-height: 100%;
+    width: auto;
+    object-fit: contain;
+}
+
+/* ========== FOOTER (HIDDEN) ========== */
+footer {
+    display: none;
+}
+
+/* ========== TIMER STYLES ========== */
+#door-timer {
+    font-size: 2rem;
+    text-align: center;
+    text-shadow: 0 0 10px black;
+    padding: 10px;
+    border-radius: 15px;
+    background-color: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 20px rgb(0, 0, 0);
+    border: 2px solid rgba(255, 255, 255, 0.05);
+    max-width: 100%;
+    line-height: 1.5;
+}
+
+/* ========== RESPONSIVE FLEX DIRECTION ========== */
+/* Switch to column layout when viewport is taller than it is wide */
+@media (max-aspect-ratio: 1/1) {
+    main {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        height: calc(100vh - 193px); /* header height */
+        min-height: 0;
+        padding: 8px 0;
+        overflow: hidden;
+    }
+
+    .timer-sign,
+    .text-signs,
+    .student-sign {
+        flex: 1 1 0;
+        min-height: 0;
+        min-width: 0;
+        width: 100% !important;
+        max-width: 100vw;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .text-signs {
+        flex: 1.1 1 0;
+        order: 1; /* Show text-signs first */
+    }
+
+    .timer-sign {
+        flex: 0.8 1 0;
+        order: 2; /* Show timer-sign last (at the bottom) */
+    }
+
+    .student-sign {
+        display: none;
+    }
+
+    #door-timer {
+        font-size: 1.5rem;
+        padding: 10px;
+        max-width: 95vw;
+        max-height: 18vh;
+        box-sizing: border-box;
+    }
+
+    .text-signs img {
+        max-width: 90vw;
+        max-height: 30vh;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        margin: 4px 0;  
+        flex: 1 1 0;
+    }
+        .text-signs, .timer-sign, .welcome-sign, .door-sign {
+        box-sizing: border-box;
+    }
+        .welcome-sign, .door-sign {
+        box-sizing: border-box;
+        display: inline-block;
+    }
+}

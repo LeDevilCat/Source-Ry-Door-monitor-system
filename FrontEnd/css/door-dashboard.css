@@ -1,0 +1,259 @@
+/* ===========================================================
+   DOOR DATA DASHBOARD STYLESHEET
+   -----------------------------------------------------------
+   This file contains all styles for the door data dashboard page.
+   - Controls layout, chart containers, summary section, and refresh button.
+   - Responsive design ensures charts look good on all screen sizes.
+   - Each section is clearly labeled for easy navigation and editing.
+   =========================================================== */
+
+/* ========== PAGE BACKGROUND ========== */
+/* Sets the dashboard background image and layout */
+body {
+    background-image: url(../images/concrete-background.jpg);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: top center;
+}
+
+/* ========== MAIN LAYOUT ========== */
+/* Main container for dashboard content, centers and spaces chart rows */
+main {
+    flex-grow: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    gap: 40px;
+}
+
+/* ========== CHART CONTAINERS ========== */
+/* Use CSS variables for easy control */
+:root {
+    --chart-max-height: 400px; /* Change this value for all charts */
+}
+
+/* Remove conflicting rules from .chart-container and .chart-container canvas */
+.chart-container {
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgb(0, 0, 0);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Remove aspect-ratio and sizing from canvas, let container control it */
+.chart-container canvas {
+    display: block;
+    margin: 0 auto;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: unset;
+}
+
+/* ========== CHART ROWS ========== */
+.chart-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 32px;
+    width: 100%;
+    max-width: 1600px;
+    aspect-ratio: 3 / 1;
+    margin-bottom: 32px;
+}
+
+.chart-row .chart-container {
+    min-width: 0;
+    min-height: 0;
+    max-width: none;
+    width: 100%;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgb(0, 0, 0);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Line chart: 2:1 aspect ratio, max height, width follows ratio */
+.chart-row .chart-container:first-child {
+    flex: 2 1 0;
+    aspect-ratio: 2 / 1;
+    max-height: var(--chart-max-height);
+    max-width: calc(var(--chart-max-height) * 2);
+}
+
+/* Pie chart: 1:1 aspect ratio, max height, width follows ratio */
+.chart-row .chart-container:last-child {
+    flex: 1 1 0;
+    aspect-ratio: 1 / 1;
+    max-height: var(--chart-max-height);
+    max-width: var(--chart-max-height);
+}
+
+/* ========== RESPONSIVE STACKING ========== */
+/* On small screens, stack chart containers vertically instead of side by side */
+@media (max-width: 800px) {
+    .chart-row {
+        flex-direction: column;
+        aspect-ratio: unset !important;
+        min-height: unset !important;
+        margin-bottom: 32px;
+        width: 100%;
+        max-width: 100%;
+    }
+    .chart-row .chart-container {
+        flex: 1 1 auto;
+        aspect-ratio: unset !important;
+        min-height: 320px;
+        max-height: none;
+        width: 100%;
+        max-width: 100%;
+        padding: 10px;
+        overflow: visible;
+    }
+    /* Only apply fixed height to line charts for sharpness */
+    .line-chart {
+        width: 100% !important;
+        height: 220px !important;
+        max-width: 100% !important;
+        max-height: 320px !important;
+        display: block;
+        margin: 0 auto 12px auto;
+        aspect-ratio: unset !important;
+    }
+    /* Keep pie chart canvas as before */
+    .chart-container canvas:not(.line-chart) {
+        min-height: 220px;
+        height: 320px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        display: block;
+        margin: 0 auto 12px auto;
+        aspect-ratio: unset !important;
+    }
+    .custom-legend {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px 8px;
+        font-size: 0.85rem;
+        max-width: 100%;
+        margin-bottom: 8px;
+        word-break: break-word;
+    }
+    .custom-legend > * {
+        flex: 0 1 48%;
+        min-width: 60px;
+        max-width: 48%;
+        box-sizing: border-box;
+        font-size: 0.85rem;
+    }
+    h2 {
+        font-size: 1.1rem;
+        word-break: break-word;
+        text-align: center;
+    }
+}
+
+/* ========== SUMMARY ========== */
+/* Styles for the summary section at the top of the dashboard */
+#summary {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px auto;
+    max-width: 800px;
+    text-align: center;
+    box-shadow: 0 0 10px black;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 1.2rem;
+}
+
+#summary h2 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+#summary p {
+    margin: 5px 0;
+}
+
+/* ========== REFRESH BUTTON ========== */
+/* Wrapper for centering the refresh button */
+.refresh-btn-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto 10px auto;
+}
+
+/* ========== NEON BUTTON STYLE ========== */
+/* Adds a neon effect to the refresh button for a modern, eye-catching look */
+.neon-button {
+    background-color: transparent;
+    border: 2px solid #FEA136;
+    color: #FEA136;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    padding: 10px 20px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 0 8px #FEA136, 0 0 20px #FEA136 inset;
+}
+
+.neon-button:hover {
+    background: rgba(254, 161, 54, 0.18); /* subtle orange glow */
+    color: #fff;
+    box-shadow:
+        0 0 12px #FEA136,
+        0 0 30px #FEA136,
+        0 0 60px #FEA136,
+        0 0 8px #FEA136 inset;
+    border-color: #FEA136;
+    text-shadow:
+        0 0 8px #FEA136,
+        0 0 16px #FEA136;
+    transition: all 0.2s cubic-bezier(.4,2,.6,1);
+}
+
+.neon-button:active {
+    background: rgba(254, 161, 54, 0.35); /* brighter orange glow */
+    color: #fff;
+    border-color: #FEA136;
+    box-shadow:
+        0 0 24px #FEA136,
+        0 0 60px #FEA136,
+        0 0 120px #FEA136,
+        0 0 16px #FEA136 inset;
+    transform: scale(0.96);
+    filter: brightness(1.2) blur(0.5px);
+    text-shadow:
+        0 0 16px #FEA136,
+        0 0 32px #FEA136;
+    transition:
+        background 0.1s,
+        box-shadow 0.1s,
+        transform 0.08s,
+        filter 0.1s,
+        text-shadow 0.1s;
+}

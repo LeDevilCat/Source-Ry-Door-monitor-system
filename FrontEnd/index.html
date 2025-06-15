@@ -1,21 +1,28 @@
 <!-- =========================
      MAIN DOOR STATUS PAGE
-     ========================= -->
+     =========================
+     This is the main landing page for the door monitoring system.
+     It displays the current door status, timer, and relevant signs.
+     All dynamic content is updated via JavaScript using Firestore as the backend.
+     Edit this file to change the structure or add new UI elements.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Meta tags for responsive design and character encoding -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Main styles for layout and appearance -->
-    <link rel="stylesheet" href="css/styles.css">
-    <!-- Responsive overrides for different devices -->
+    <!-- Main and responsive stylesheets -->
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/front-page.css">
     <link rel="stylesheet" href="css/responsive.css">
-    <link rel="icon" href="images/source-logo.png" type="image/png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="images/source-logo-neon.png">
     <title>Source Ovi</title>
 </head>
 <body>
     <header>
-        <!-- The header contains the Source Logo on the background. Do not add anything inside. -->
+        <!-- The header contains the Source Logo as a background image. -->
     </header>
     <main>
         <!-- Timer display (shows how long the door has been open/closed) -->
@@ -35,8 +42,18 @@
     <footer>
         <!-- Footer is intentionally left empty/hidden -->
     </footer>
-    <!-- Door status and timer scripts (update UI in real time) -->
-    <script src="js/door-status.js" defer></script>
-    <script src="js/door-timer.js" defer></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/service-worker.js")
+          .then(() => console.log("Service Worker registered"));
+      }
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPrompt = e;
+      });
+    </script>
+    <script src="js/door-status.js" type="module"></script>
+    <script src="js/door-timer.js" type="module"></script>
 </body>
 </html>
