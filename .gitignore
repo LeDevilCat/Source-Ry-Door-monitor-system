@@ -1,2 +1,6 @@
+# Ignore all JSON files *except* firebase.json
 *.json
+!firebase.json
+!manifest.json
+
 *.db

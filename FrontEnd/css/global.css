@@ -1,0 +1,36 @@
+/* ========== GLOBAL FONTS & RESET ========== */
+/* 
+   This file sets up the global font and resets default browser styles.
+   All other CSS files inherit these base styles.
+   - Uses Inconsolata as the main font for a modern, readable look.
+*/
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap');
+@import url("https://use.typekit.net/vuf2liq.css");
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Inconsolata", monospace;
+    font-optical-sizing: auto;
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* ========== GLOBAL BODY ========== */
+body {
+    display: flex;
+    flex-direction: column;
+    color: #fff;
+}
+
+/* ========== GLOBAL HEADER ========== */
+header {
+    padding: 20px;
+    text-align: center;
+    height: 193px;
+    background-image: url(../images/source-header-banner.png);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: bottom center;
+}

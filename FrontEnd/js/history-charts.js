@@ -1,200 +1,233 @@
 // =========================
-// HISTORY CHARTS SCRIPT
+// HISTORY CHARTS SCRIPT (FIREBASE)
 // =========================
+// This script fetches historical door data from Firestore and displays it using Chart.js.
+// Data is fetched only when the user clicks the refresh button.
+
 console.log("History charts script loaded successfully.");
 
-// Fetch today's summary and update the summary section
-fetch('../php/current_day.php')
-    .then(response => response.json())
-    .then(todayData => {
-        const todayDate = todayData.date;
-        const numOpenings = todayData.numOfOpenings;
-        let longestDuration = 0;
+import { db } from '../js/firebase-config.js';
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-firestore.js";
 
-        todayData.openings.forEach(open => {
-            const opened = new Date(`1970-01-01T${open.opened}:00Z`);
-            const closed = new Date(`1970-01-01T${open.closed}:00Z`);
-            const duration = (closed - opened) / 1000; // duration in seconds
-            if (duration > longestDuration) {
-                longestDuration = duration;
+// Helper to format a duration in seconds as "Xh Ym Zs"
+function formatDuration(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${hours}h ${minutes}m ${secs}s`;
+}
+
+// Loads all historical data from Firestore and prepares it for charting
+async function loadHistoryChartData() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "door_data"));
+        const data = [];
+
+        // Only include documents with date-like IDs (yyyy-mm-dd)
+        querySnapshot.forEach(docSnap => {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(docSnap.id)) {
+                data.push({ id: docSnap.id, ...docSnap.data() });
             }
         });
 
-        const hours = Math.floor(longestDuration / 3600);
-        const minutes = Math.floor((longestDuration % 3600) / 60);
-        const seconds = Math.floor(longestDuration % 60);
-
-        document.getElementById('today-date').textContent = `Today’s Summary (${todayDate})`;
-        document.getElementById('today-openings').textContent = `The door has been opened ${numOpenings} times today.`;
-        document.getElementById('today-longest').textContent = `Longest single opening duration: ${hours}h ${minutes}m ${seconds}s.`;
-    })
-    .catch(error => {
-        console.error("Error fetching today's data:", error);
-    });
-
-// Fetch historical data and render charts
-fetch('../php/history.php')
-    .then(response => response.json())
-    .then(data => {
-        const last7 = data.dates.slice(-7);
-        const last30 = data.dates.slice(-30);
-
-        const prepareChartData = (entries) => {
-            const labels = [];
-            const counts = [];
-            const durationLabels = [];
-            const durations = [];
-
-            entries.forEach(entry => {
-                labels.push(entry.date);
-                counts.push(entry.openings.length);
-
-                entry.openings.forEach((open, idx) => {
-                    const opened = new Date(`1970-01-01T${open.opened}:00Z`);
-                    const closed = new Date(`1970-01-01T${open.closed}:00Z`);
-                    const duration = (closed - opened) / 60000;
-                    durationLabels.push(`${entry.date} #${idx + 1}`);
-                    durations.push(duration);
-                });
-            });
-
-            return { labels, counts, durationLabels, durations };
-        };
-
-        const weekData = prepareChartData(last7);
-        const monthData = prepareChartData(last30);
-
-        const createLineChart = (canvasId, labels, data, label, color) => {
-            new Chart(document.getElementById(canvasId), {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label,
-                        data,
-                        borderColor: color,
-                        backgroundColor: color + '33',
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 }
-                        }
-                    }
-                }
-            });
-        };
-
-        const createBarChart = (canvasId, labels, data, label, color, yMax = null) => {
-            new Chart(document.getElementById(canvasId), {
-                type: 'bar',
-                data: {
-                    labels,
-                    datasets: [{
-                        label,
-                        data,
-                        backgroundColor: color
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: yMax, // Set the max value dynamically
-                        },
-                        x: {
-                            ticks: {
-                                maxRotation: 90,
-                                minRotation: 45
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    // Show value in minutes and seconds
-                                    const totalMinutes = context.parsed.y;
-                                    const minutes = Math.floor(totalMinutes);
-                                    const seconds = Math.round((totalMinutes - minutes) * 60);
-                                    return `${minutes} min ${seconds} s`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        };
-
-        const last90 = data.dates.slice(-90);
-        const ninetyData = prepareChartData(last90);
-
-        // Add charts for 90 days
-        createLineChart('ninetyDayOpeningsChart', ninetyData.labels, ninetyData.counts, 'Openings (90d)', '#FFD700'); // gold
-        createBarChart(
-            'ninetyDayDurationsChart',
-            ninetyData.durationLabels,
-            ninetyData.durations,
-            'Duration (90d)',
-            '#20B2AA',
-            Math.max(...ninetyData.durations) || 1 // yMax
-        );
-
-        createLineChart('dailyOpeningsChart', weekData.labels, weekData.counts, 'Openings (7d)', '#FF671F');
-        createBarChart(
-            'openingDurationsChart',
-            weekData.durationLabels,
-            weekData.durations,
-            'Duration (7d)',
-            '#2E4A7D',
-            Math.max(...weekData.durations) || 1 // yMax
-        );
-        createLineChart('monthlyOpeningsChart', monthData.labels, monthData.counts, 'Openings (30d)', '#A29F65');
-        createBarChart(
-            'monthlyDurationsChart',
-            monthData.durationLabels,
-            monthData.durations,
-            'Duration (30d)',
-            '#E07A5F',
-            Math.max(...monthData.durations) || 1 // yMax
-        );
-
-        // Compute all-time statistics
-        let maxOpenings = 0;
-        let maxOpeningsDate = '';
-        let longestDuration = 0;
-        let longestDurationDate = '';
-
-        data.dates.forEach(entry => {
-            if (entry.openings.length > maxOpenings) {
-                maxOpenings = entry.openings.length;
-                maxOpeningsDate = entry.date;
-            }
-
-            entry.openings.forEach(open => {
-                const opened = new Date(`1970-01-01T${open.opened}:00Z`);
-                const closed = new Date(`1970-01-01T${open.closed}:00Z`);
-                const duration = (closed - opened) / 1000; // duration in seconds
-                if (duration > longestDuration) {
-                    longestDuration = duration;
-                    longestDurationDate = entry.date;
-                }
-            });
+        // Sort data by date ascending
+        data.sort((a, b) => {
+            const [ya, ma, da] = a.id.split('-').map(Number);
+            const [yb, mb, db] = b.id.split('-').map(Number);
+            return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
         });
 
-        const hours = Math.floor(longestDuration / 3600);
-        const minutes = Math.floor((longestDuration % 3600) / 60);
-        const seconds = Math.floor(longestDuration % 60);
+        // Prepare data for the last 7, 30, and 90 days
+        const last7 = data.slice(-7);
+        const last30 = data.slice(-30);
+        const last90 = data.slice(-90);
+        const chart7 = prepareChartData(last7);
+        const chart30 = prepareChartData(last30);
+        const chart90 = prepareChartData(last90);
 
-        document.getElementById('most-openings-day').textContent = `Most openings: ${maxOpenings} times on ${maxOpeningsDate}.`;
-        document.getElementById('longest-open-day').textContent = `Longest single opening: ${hours}h ${minutes}m ${seconds}s on ${longestDurationDate}.`;
-    })
-    .catch(error => {
-        console.error("Error fetching historical data:", error);
+        // For each period, bin durations and create pie chart
+        const pie7 = binDurations(chart7.durations);
+        const pie30 = binDurations(chart30.durations);
+        const pie90 = binDurations(chart90.durations);
+
+        // Render the pie charts for durations (all three sections)
+        createPieChart('openingDurationsChart', pie7.labels, pie7.data, 'Opening Durations (7d)');
+        createPieChart('monthlyDurationsChart', pie30.labels, pie30.data, 'Opening Durations (30d)');
+        createPieChart('ninetyDayDurationsChart', pie90.labels, pie90.data, 'Opening Durations (90d)');
+
+        // Create bar charts for daily openings (all three sections)
+        createBarChart('dailyOpeningsChart', chart7.labels, chart7.counts, 'Daily Openings (7d)');
+        createBarChart('monthlyOpeningsChart', chart30.labels, chart30.counts, 'Daily Openings (30d)');
+        createBarChart('ninetyDayOpeningsChart', chart90.labels, chart90.counts, 'Daily Openings (90d)');
+    } catch (error) {
+        console.error("Error loading historical chart data:", error);
+    }
+}
+
+// Helper: Bin durations (in minutes) into specified categories
+function binDurations(durations) {
+    // Updated bins as per your table
+    const bins = [
+        [0, 15, "< 15 min"],         // 0–15
+        [15, 30, "15–30 min"],       // 16–30
+        [30, 60, "30–60 min"],       // 31–60
+        [60, 120, "1–2 h"],          // 61–120
+        [120, 240, "2–4 h"],         // 121–240
+        [240, 480, "4–8 h"],         // 241–480
+        [480, Infinity, "> 8 h"]     // 481+
+    ];
+
+    const counts = Array(bins.length).fill(0);
+    durations.forEach(mins => {
+        for (let i = 0; i < bins.length; i++) {
+            if (mins >= bins[i][0] && mins < bins[i][1]) {
+                counts[i]++;
+                break;
+            }
+        }
     });
+
+    // Only return bins with count > 0
+    const labels = [];
+    const data = [];
+    for (let i = 0; i < bins.length; i++) {
+        if (counts[i] > 0) {
+            labels.push(bins[i][2]);
+            data.push(counts[i]);
+        }
+    }
+    return { labels, data };
+}
+
+// Chart.js pie chart creation for durations
+function createPieChart(canvasId, labels, data, chartLabel) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+    if (ctx._chartInstance) {
+        ctx._chartInstance.destroy();
+    }
+
+    // Remove custom colors: let Chart.js use its default color palette
+    ctx._chartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: chartLabel,
+                data: data
+                // No backgroundColor specified
+            }]
+        },
+        options: {
+            responsive: true,
+            devicePixelRatio: window.devicePixelRatio || 1,
+            plugins: {
+                legend: { display: true }, // Enable built-in legend
+                title: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            return `${label}: ${value} times`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Chart.js bar chart creation for openings
+function createBarChart(canvasId, labels, data, chartLabel) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    if (ctx._chartInstance) {
+        ctx._chartInstance.destroy();
+    }
+
+    const mainPurple = '#8e44ad';
+
+    ctx._chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: chartLabel,
+                data: data,
+                borderColor: mainPurple,
+                backgroundColor: 'rgba(142, 68, 173, 0.1)',
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: mainPurple,
+                tension: 0.3
+            }]
+        },
+        options: {
+            devicePixelRatio: window.devicePixelRatio || 1,
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            },
+            devicePixelRatio: window.devicePixelRatio || 1,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#fff',
+                        font: {
+                            family: 'Orbitron, sans-serif',
+                            size: 14
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Count: ${context.parsed.y}`;
+                        }
+                    }
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#fff' },
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                },
+                y: {
+                    ticks: { color: '#fff' },
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                }
+            }
+        }
+    });
+}
+
+// Helper: Prepare chart data from Firestore entries
+function prepareChartData(entries) {
+    const labels = [];
+    const counts = [];
+    const durations = [];
+    entries.forEach(entry => {
+        labels.push(entry.id);
+        counts.push(entry.num_of_openings || 0);
+
+        // Push each opening's duration (in minutes) individually
+        (entry.openings || []).forEach(open => {
+            if (open.opened && open.closed) {
+                durations.push((open.closed - open.opened) / 60); // seconds to minutes
+            }
+        });
+    });
+    return { labels, counts, durations };
+}
+
+// Set up event listeners for page load and refresh button
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("refresh-btn").addEventListener("click", () => {
+        loadHistoryChartData();
+    });
+});
+
+console.log("History charts script initialized successfully.");

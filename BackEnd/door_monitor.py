@@ -1,192 +1,232 @@
 #!/usr/bin/env python3
 
-import sqlite3 # SQLite library for database operations
-import json # JSON library for reading/writing JSON files
-from datetime import datetime, date # datetime library for handling date and time
-from gpiozero import Button # GPIO library for handling GPIO pins
-from signal import pause # Signal library for pausing the script (keeps it running)
-from pathlib import Path # Pathlib library for handling file paths
+import json  # JSON library for reading/writing JSON files
+from gpiozero import Button  # GPIO library for handling GPIO pins
+from signal import pause  # Signal library for pausing the script (keeps it running by waiting for events)
+from datetime import date, datetime  # datetime library for handling date and time
+from pathlib import Path  # Pathlib library for handling file paths
+import firebase_admin  # Firebase Admin SDK for interacting with Firebase
+from firebase_admin import credentials, firestore  # Firestore library for interacting with Firestore database
+from apscheduler.schedulers.background import BackgroundScheduler  # Scheduler for running tasks in the background
 
 
 
 # This script monitors the SOURCE club room door (A0-35) using a GPIO button (magnetic switch on the door)
-# and logs the opening and closing times to a SQLite database.
-# It also maintains a JSON file to keep track of the current door status and the latest open/close timestamps.
+# and logs door status, as well as the opening and closing times, to a Firestore Database.
+# It also maintains JSON files to keep track of the current door status, latest open/close timestamps, and daily door data.
 
-# Switch has to be connected to GPIO pin 21 (BCM mode) and GND.
+# The switch has to be connected to GPIO pin 21 (BCM mode) and GND.
 # If 21 is not available, change the pin number in the code (at the bottom where the main program starts).
 
 
 
-# Path to the SQLite database file
-DATABASE_FILE = "/var/lib/database/club_room_data.db"
+# Path to the project folder
+PROJECT_FOLDER = "/home/source/DoorMonitor/"
+
 # Path to the JSON file storing the current door status and timestamps
-CURRENT_STATUS_FILE = "/var/www/html/js/current_status.json"
+CURRENT_STATUS_FILE = PROJECT_FOLDER + "current_status.json"
+# Path to the JSON file storing the daily door data
+DAY_DATA_FILE = PROJECT_FOLDER + "day_data.json"
+# Path to the Firebase credentials file
+CREDENTIALS_FILE = PROJECT_FOLDER + "credentials.json"
 
 
+# ---------- FUNCTIONS ----------
 
 # Returns the current timestamp in seconds (used for logging open/close times)
 def get_timestamp():
     return int(datetime.now().timestamp())
 
-
-
-# Returns today's date as a string in 'dd-mm-yyyy' format
+# Returns today's date as a string in 'yyyy-mm-dd' format
 def get_today_date():
-    return date.today().strftime('%d-%m-%Y')
+    return date.today().strftime('%Y-%m-%d')
+
+# Reads the daily data from the JSON file and returns it as a dictionary
+def get_day_data():
+    with open(DAY_DATA_FILE, 'r') as file:
+        return json.load(file)
+
+# Reads the current status data from the JSON file and returns it as a dictionary
+def get_status_data():
+    with open(CURRENT_STATUS_FILE, 'r') as file:
+        return json.load(file)
 
 
 
-# Checks if the current_status.json file exists and is not empty.
-# If it doesn't exist or is empty, creates it with default values.
-# Returns the loaded JSON data as a dictionary.
-def check_if_status_exists():
-    status_path = Path(CURRENT_STATUS_FILE)
-
-    # Creates the file with default status if missing or empty
-    if not status_path.exists() or status_path.stat().st_size == 0:
-        with open(CURRENT_STATUS_FILE, 'w') as f:
-            json.dump({"current_status": {
-                "isOpen": 0,        # 0 = closed, 1 = open
-                "lastOpened": 0,    # Timestamp of last opening
-                "lastClosed": 0     # Timestamp of last closing
-            }}, f)
-        print("Current status JSON created")
-
-    # Loads and returns the current status data
-    with open(CURRENT_STATUS_FILE, 'r') as f:
-        data = json.load(f)
+# Pushes a new entry of the previous opening and closing timestamps as a dictionary to the day_data.json
+def current_openings_to_json():
+    status_data = get_status_data()
+    new_entry = { "opened": status_data["lastOpened"], "closed": status_data["lastClosed"]}
+    day_data = get_day_data()
+    today = get_today_date()
     
-    return data
-
-
-
-# Updates the current_status.json file with the latest door status and timestamps.
-# door_current_status: 1 if open, 0 if closed.
-def update_current_status(door_current_status):
-    current_data = check_if_status_exists()
-    now = get_timestamp()
-
-    # Updates the status (whether the door is open or closed)
-    current_data["current_status"]["isOpen"] = door_current_status
-    if door_current_status == 1:
-        # Updates lastOpened timestamp if the door is opened
-        current_data["current_status"]["lastOpened"] = now
+    if today in day_data:
+        # If today's date exists, increments the number of openings and append the new entry
+        day_data[today]["numOfOpenings"] += 1
+        day_data[today]["openings"].append(new_entry)
+        with open(DAY_DATA_FILE, 'w') as file:
+            json.dump(day_data, file)
     else:
-        # Updates lastClosed timestamp if the door is closed
-        current_data["current_status"]["lastClosed"] = now
+        # If it's a new day, overwrites the file with the new day's data
+        with open(DAY_DATA_FILE, 'w') as file:
+            json.dump({
+                today: {
+                    "numOfOpenings": 1,
+                    "openings": [new_entry]
+                }
+            }, file)
 
-    # Dumps the updated status data back to the JSON file
-    with open(CURRENT_STATUS_FILE, 'w') as f:
-        json.dump(current_data, f)
 
 
-
-# Initializes the SQLite database and creates tables if they do not exist.
-def initialize_db():
+# Sends the current status and previous timestamps to Firebase
+def status_to_firebase():
     try:
-        # Creates a new database or connects to an existing one
-        with sqlite3.connect(DATABASE_FILE) as conn:
-            c = conn.cursor()
+        status_data = get_status_data()  # Gets the current status data from the JSON file
 
-            # Creates a table for storing dates if it doesn't already exist
-            c.execute('''
-                CREATE TABLE IF NOT EXISTS dates (
-                    id INTEGER PRIMARY KEY,
-                    date TEXT UNIQUE NOT NULL
-                )
-            ''')
+        # Updates the door status and last opened/closed timestamps in the Firestore database
+        db.collection("door_data").document("current_status").set({
+            "isOpen": status_data["isOpen"],
+            "lastOpened": status_data["lastOpened"],
+            "lastClosed": status_data["lastClosed"]
+        })
 
-            # Creates a table for storing door opening and closing times if it doesn't already exist
-            # This table takes a foreign key reference to the dates table to link events to specific dates (date_id)
-            c.execute('''
-                CREATE TABLE IF NOT EXISTS openings (
-                    date_id INTEGER NOT NULL,
-                    opening_time INTEGER NOT NULL,
-                    closing_time INTEGER NOT NULL,
-                    FOREIGN KEY (date_id) REFERENCES dates(id)
-                )
-            ''')
+    except Exception as e:
+        print(f"[ERROR] Exception while updating status in Firebase: {e}")
 
-            # Commits the changes to the database
-            conn.commit()
 
+
+# Sends the full day's data to Firebase
+def send_full_data_to_db():
+    try:
+        day_data = get_day_data()
+        date_id = next(iter(day_data))  # Gets the date key (should be only one)
+        numOfOpens = day_data[date_id]["numOfOpenings"]
+        opens = day_data[date_id]["openings"]
+        print("DATA SAVED TO DATABASE UNDER ", date_id)
+        db.collection("door_data").document(date_id).set({
+            "num_of_openings": numOfOpens,
+            "openings": opens
+        })
     except Exception as e:
         print(f"[ERROR] Failed to log data: {e}")
 
 
 
-# Logs an opening/closing event to the database for the given date.
-# date_str: date string in 'dd-mm-yyyy' format.
-def log_opening_to_db(date_str):
-    try:
-        with sqlite3.connect(DATABASE_FILE) as conn:
-            c = conn.cursor()
+# Updates the current status and handles daily data and Firebase updates
+def update_status(status):
+    status_data = get_status_data()
+    if(status_data["isOpen"] == status):
+        # If the status hasn't changed, do nothing
+        print("Status unchanged, no update needed.")
+        return
+    
+    status_data["isOpen"] = status
 
-            # Gets the latest opening and closing times from the status file
-            current_data = check_if_status_exists()
-            opening_time = current_data["current_status"]["lastOpened"]
-            closing_time = current_data["current_status"]["lastClosed"]
-
-            # Checks if the date already exists in the dates table
-            c.execute("SELECT id FROM dates WHERE date = ?", (date_str,))
-            # fetchone() retrieves the first row of the result set, which contains the date ID
-            row = c.fetchone()
-            
-            if row is not None:
-                # If the date exists, gets its ID and assigns it to date_id
-                date_id = row[0]
-            else:
-                # Inserts new date if not found in the dates table
-                c.execute("INSERT INTO dates (date) VALUES (?)", (date_str,))
-                # Fetches the ID of the newly inserted date and assigns it to date_id
-                date_id = c.lastrowid
-
-            # Inserts the opening/closing event
-            c.execute(
-                "INSERT INTO openings (date_id, opening_time, closing_time) VALUES (?, ?, ?)",
-                (date_id, opening_time, closing_time)
-            )
-            conn.commit()
-            print(f"[SAVED] {date_str} | Open: {opening_time}, Close: {closing_time}")
-
-    except sqlite3.OperationalError as e:
-        print("SQLite error:", e)
-
-
-
-# Handler for when the door is opened (button/magnetic switch released)
-def door_opened():
-    update_current_status(1)
-    print(f"Door opened")
-
-
-
-# Handler for when the door is closed (button/magnetic switch pressed)
-# Only logs the closing time if there was a valid opening event in the JSON file.
-def door_closed():
-    current_data = check_if_status_exists()
-
-    # Only logs closing time if there was a valid opening event
-    if current_data["current_status"]["lastOpened"] in (None, 0):
-        print(f"Door opening time not found, not recording closing time")
-    elif current_data["current_status"]["isOpen"] == 0:
-        print(f"Door is already closed, not recording closing time")
+    if(status == 0):
+        # Door closed: updates lastClosed timestamp
+        status_data["lastClosed"] = get_timestamp()
+        print("Door closed")
     else:
-        print(f"Door closed")
+        # Door opened: updates lastOpened timestamp
+        status_data["lastOpened"] = get_timestamp()
+        print("Door opened")
+    
+    # Saves the updated status to the JSON file
+    with open(CURRENT_STATUS_FILE, 'w') as file:
+        json.dump(status_data, file)
+
+    if(status == 0 and status_data["lastOpened"] != 0):
+        # If the door is being closed and it was previously opened,
+        # checks if the date has changed before updating the day_data.json.
+        # This ensures data is sent to Firebase only once per day.
+        day_data = get_day_data()
         today = get_today_date()
-        update_current_status(0)
-        log_opening_to_db(today)
+        date_id = next(iter(day_data))
+        if today != date_id:
+            send_full_data_to_db()  # Sends previous day's data to Firebase
+
+        current_openings_to_json()  # Logs the new opening/closing event
+    
+    # Always updates the current status to Firebase
+    status_to_firebase()
+
+
+# This function is called when a new day starts
+# Reason for this function is that if the door is closed for multiple days in a row,
+#   the program pushes logs to the database even if empty. This is to ensure that the
+#   web page of the door's statistics gets appropriate data.
+def new_day_is_here():
+    print("New day detected!")
+    try:
+        day_data = get_day_data()
+        date_id = next(iter(day_data))  # Gets the date key (should be only one)
+
+        if(db.collection("door_data").document(date_id).get().exists):
+            print("Data already detected from ", date_id, ". Data not sent to Firebase.")
+            return
+
+        send_full_data_to_db()  # Sends the previous day's data to Firebase
+
+        with open(DAY_DATA_FILE, 'w') as file:
+            # Resets the day_data.json for the new day
+            json.dump({
+                get_today_date(): {
+                    "numOfOpenings": 0,
+                    "openings": []
+                }
+            }, file)
+            print("day_data JSON reset for the new day.")
+    except Exception as e:
+        print(f"[ERROR] Failed to archive previous day's data: {e}")
 
 
 
-# --- PROGRAM STARTS HERE ---
+# INITIALIZATIONS
 
-button = Button(21, bounce_time=0.2)  # GPIO pin 21 for the button (magnetic switch) with a bounce time of 0.2 seconds
-initialize_db()  # Initializes the database and creates tables if they do not exist
+# ---------- Firebase initialization ----------
+if not firebase_admin._apps:
+    cred = credentials.Certificate(CREDENTIALS_FILE)
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
 
-# Attaches event handlers to the button (interrupts)
-button.when_released = lambda: door_opened()  # (0 → 1: Door opens)
-button.when_pressed = lambda: door_closed()   # 1 → 0: Door closes
+# ---------- current_status.json initialization ----------
+if not Path(CURRENT_STATUS_FILE).exists() or Path(CURRENT_STATUS_FILE).stat().st_size == 0:
+    # If the status file doesn't exist or is empty, creates it with default values
+    with open(CURRENT_STATUS_FILE, 'w') as file:
+        json.dump({
+            "isOpen": 0,
+            "lastOpened": 0,
+            "lastClosed": 0
+        }, file)
+        print("JSON created.")
 
-pause()  # Keeps the script running
+# ---------- day_data.json initialization ----------
+if not Path(DAY_DATA_FILE).exists() or Path(DAY_DATA_FILE).stat().st_size == 0:
+    # If the day data file doesn't exist or is empty, creates it with today's date and empty data
+    with open(DAY_DATA_FILE, 'w') as file:
+        json.dump({
+            f"{get_today_date()}": {
+                "numOfOpenings": 0,
+                "openings": []
+            }
+        }, file)
+        print("day_data JSON created.")
+
+
+
+# Scheduler to run the new_day_is_here function at 00:01.
+# The scheduler waits one minute after midnight to make sure that the get_today_date function returns the correct date
+scheduler = BackgroundScheduler(timezone="Europe/Helsinki")
+scheduler.add_job(new_day_is_here, 'cron', hour=0, minute=1)
+scheduler.start()
+
+
+
+# GPIO Button setup
+door_button = Button(21, bounce_time=1.0)  # Set up the GPIO button on pin 21 with a bounce time of 1.0 seconds
+
+# Button event handlers
+door_button.when_released = lambda: update_status(1)  # When the button is released, the door is opened
+door_button.when_pressed = lambda: update_status(0)   # When the button is pressed, the door is closed
+
+pause()  # Keeps the script running and waiting for button events
